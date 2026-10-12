@@ -1,0 +1,9 @@
+   {
+     "version": "2.0.0",
+     "mandatory": false,
+     "releaseDate": "2026-10-12",
+     "notes": "Prima versione.",
+     "downloads": {
+       "win": "https://github.com/Lolloorl/tubegrabber/releases/download/v2.0.0/TubeGrabber-2.0.0-win-x64.exe"
+     }
+   }

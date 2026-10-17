@@ -1,0 +1,69 @@
+# Costruisce la versione per Mac (Apple Silicon: M1, M2, M3, M4...) e la allega a una release esistente.
+# Si avvia a mano da GitHub: scheda Actions -> "Costruisci versione Mac" -> Run workflow.
+name: Costruisci versione Mac
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release a cui aggiungere il file Mac (es. v2.2.0)"
+        required: true
+        default: "v2.2.0"
+permissions:
+  contents: write
+jobs:
+  mac:
+    runs-on: macos-latest
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"   # niente firma Apple a pagamento: usiamo la firma "ad-hoc" qui sotto
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installa le dipendenze
+        run: npm install
+
+      - name: Scarica yt-dlp (con controllo di integrità), deno e ffmpeg
+        run: |
+          set -e
+          mkdir -p bin/mac
+          curl -fL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos -o bin/mac/yt-dlp
+          curl -fL https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA2-256SUMS -o sums.txt
+          EXPECTED=$(grep -E ' \*?yt-dlp_macos$' sums.txt | awk '{print $1}')
+          ACTUAL=$(shasum -a 256 bin/mac/yt-dlp | awk '{print $1}')
+          if [ -z "$EXPECTED" ] || [ "$EXPECTED" != "$ACTUAL" ]; then echo "ERRORE: controllo di integrità di yt-dlp fallito"; exit 1; fi
+          curl -fL https://github.com/denoland/deno/releases/latest/download/deno-aarch64-apple-darwin.zip -o deno.zip
+          unzip -o deno.zip -d bin/mac
+          mkdir ffwork && cd ffwork && npm init -y > /dev/null && npm install ffmpeg-static
+          cp "$(node -p "require('ffmpeg-static')")" ../bin/mac/ffmpeg
+          cd ..
+          chmod +x bin/mac/yt-dlp bin/mac/deno bin/mac/ffmpeg
+          echo "--- programmi inclusi ---"
+          ls -la bin/mac
+          bin/mac/yt-dlp --version
+          bin/mac/ffmpeg -version | head -1
+          bin/mac/deno --version | head -1
+
+      - name: Costruisci l'applicazione
+        run: npx electron-builder --mac --arm64 --dir --publish never
+
+      - name: Firma ad-hoc e controlla
+        run: |
+          set -e
+          APP="dist/mac-arm64/TubeGrabber.app"
+          codesign --force --deep --sign - "$APP"
+          codesign --verify --deep --strict "$APP"
+          echo "--- programmi dentro l'app (devono partire) ---"
+          "$APP/Contents/Resources/bin/mac/yt-dlp" --version
+          "$APP/Contents/Resources/bin/mac/ffmpeg" -version | head -1
+
+      - name: Crea il file .dmg
+        run: npx electron-builder --mac dmg --arm64 --prepackaged "dist/mac-arm64/TubeGrabber.app" --publish never
+
+      - name: Allega il .dmg alla release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          files: dist/*.dmg

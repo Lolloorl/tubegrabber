@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TubeGrabber — By Lorenzo Orlandi</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="tabstrip" id="tabstrip">
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <div class="newtab-wrap"><button class="newtab" id="newtab" title="Nuova scheda (Ctrl+T)" aria-label="Nuova scheda">+</button></div>
+</header>
+
+<div class="banner" id="banner" hidden>
+  <div class="banner-text"><strong id="banner-title"></strong><span id="banner-notes"></span></div>
+  <div class="banner-actions">
+    <button class="btn small solid" id="banner-get">Scarica aggiornamento</button>
+    <button class="btn small ghost" id="banner-later">Più tardi</button>
+  </div>
+</div>
+
+<main id="panels"></main>
+
+<footer class="statusbar">
+  <span class="brand">TubeGrabber <b>By Lorenzo Orlandi</b></span>
+  <span class="grow"></span>
+  <span id="notice" class="notice"></span>
+  <span id="toolcheck" class="muted"></span>
+  <span id="version" class="muted"></span>
+  <button class="link" id="open-report">Segnala problema</button>
+  <button class="link" id="open-settings">Impostazioni</button>
+  <button class="link" id="checkupdate">Verifica aggiornamenti</button>
+</footer>
+
+<!-- ======================= YOUTUBE ======================= -->
+<template id="tpl-youtube">
+  <div class="wrap">
+    <h1>Scarica da YouTube</h1>
+    <p class="sub">Incolla uno o più link o playlist, uno per riga. Ogni playlist finisce in una cartella col suo titolo.</p>
+    <textarea data-el="links" class="field area" spellcheck="false" placeholder="https://www.youtube.com/watch?v=…&#10;https://www.youtube.com/playlist?list=…"></textarea>
+    <div class="row">
+      <label class="ctl">Qualità video
+        <select data-el="quality" class="field">
+          <option value="max">Massima (4K/ottimale)</option><option value="1080">1080p</option>
+          <option value="720">720p</option><option value="480">480p</option><option value="360">360p</option>
+        </select></label>
+      <label class="ctl">Audio
+        <select data-el="audiofmt" class="field">
+          <option value="mp3">MP3 · massima qualità (VBR V0)</option><option value="best">Originale · senza ricodifica</option>
+        </select></label>
+      <label class="check"><input type="checkbox" data-el="cover" checked> Copertina quadrata</label>
+    </div>
+    <div class="actions">
+      <button class="btn solid alt" data-el="go-mp3">Scarica MP3</button>
+      <button class="btn solid" data-el="go-mp4">Scarica MP4</button>
+    </div>
+  </div>
+</template>
+
+<!-- ======================= CONVERTI ======================= -->
+<template id="tpl-convert">
+  <div class="wrap">
+    <h1>Converti file</h1>
+    <p class="sub">Trascina uno o più file, scegli il formato di arrivo e avvia.</p>
+    <div class="drop compact" data-el="drop" tabindex="0" role="button"><strong>Trascina qui i file</strong><span>oppure clicca per sceglierli</span></div>
+    <ul class="files" data-el="list"></ul>
+    <div class="formats">
+      <div class="fgroup"><div class="flabel">Più usati</div><div class="chips big" data-el="chips-popular"></div></div>
+      <div class="fgrid">
+        <div class="fgroup"><div class="flabel">Video</div><div class="chips" data-el="chips-video"></div></div>
+        <div class="fgroup"><div class="flabel">Audio</div><div class="chips" data-el="chips-audio"></div></div>
+        <div class="fgroup"><div class="flabel">Immagine</div><div class="chips" data-el="chips-image"></div></div>
+      </div>
+    </div>
+    <div class="row">
+      <label class="ctl">Compressione video
+        <select data-el="compression" class="field">
+          <option value="none">Nessuna (qualità standard)</option><option value="high">Alta qualità</option>
+          <option value="balanced">Bilanciata</option><option value="strong">Massima compressione</option>
+        </select></label>
+    </div>
+    <div class="actions"><button class="btn solid" data-el="go">Avvia conversione</button></div>
+  </div>
+</template>
+
+<!-- ======================= DRONE ======================= -->
+<template id="tpl-drone">
+  <div class="wrap">
+    <h1>Drone Sync</h1>
+    <p class="sub">Unisce ogni video con l'audio che ha lo stesso nome. Il video non viene mai accorciato: se l'audio è più corto resta il silenzio in coda, se è più lungo viene tagliato alla durata del video.</p>
+    <div class="drop" data-el="drop" tabindex="0" role="button"><strong>Trascina video e audio del drone</strong><span>es. DJI_0001.mp4 + DJI_0001.wav</span></div>
+    <table class="table"><thead><tr><th>File</th><th>Tipo</th><th>Stato</th></tr></thead><tbody data-el="rows"></tbody></table>
+    <div class="actions"><button class="btn solid" data-el="go">Sincronizza clip</button></div>
+  </div>
+</template>
+
+<!-- ======================= QR STUDIO ======================= -->
+<template id="tpl-qr">
+  <div class="qr">
+    <div class="qr-controls">
+      <h1>QR Studio</h1>
+      <div class="ctl full">Cosa vuoi inserire nel QR?
+        <div class="seg flex" data-el="qrtype"><button data-v="text">Link / testo</button><button data-v="wifi">Wi-Fi</button><button data-v="whatsapp">WhatsApp</button><button data-v="email">E-mail</button><button data-v="vcard">Biglietto da visita</button></div></div>
+      <div data-type="text"><label class="ctl full">Testo o link<input class="field" data-k="text" value="https://www.youtube.com" spellcheck="false"></label></div>
+      <div data-type="wifi" class="fields" hidden>
+        <label class="ctl">Nome della rete<input class="field" data-f="wifi.ssid" spellcheck="false"></label>
+        <label class="ctl">Password<input class="field" data-f="wifi.pass" spellcheck="false"></label>
+        <label class="ctl">Sicurezza<select class="field" data-f="wifi.sec"><option value="WPA">WPA / WPA2 / WPA3</option><option value="WEP">WEP</option><option value="none">Nessuna (rete aperta)</option></select></label>
+        <label class="check"><input type="checkbox" data-f="wifi.hidden"> Rete nascosta</label>
+      </div>
+      <div data-type="whatsapp" class="fields" hidden>
+        <label class="ctl">Numero con prefisso (es. +39 347 1234567)<input class="field" data-f="whatsapp.phone" inputmode="tel"></label>
+        <label class="ctl">Messaggio (facoltativo)<input class="field" data-f="whatsapp.message"></label>
+      </div>
+      <div data-type="email" class="fields" hidden>
+        <label class="ctl">Indirizzo e-mail<input class="field" data-f="email.to" spellcheck="false"></label>
+        <label class="ctl">Oggetto (facoltativo)<input class="field" data-f="email.subject"></label>
+        <label class="ctl">Testo (facoltativo)<input class="field" data-f="email.body"></label>
+      </div>
+      <div data-type="vcard" class="fields" hidden>
+        <label class="ctl">Nome<input class="field" data-f="vcard.first"></label>
+        <label class="ctl">Cognome<input class="field" data-f="vcard.last"></label>
+        <label class="ctl">Azienda<input class="field" data-f="vcard.org"></label>
+        <label class="ctl">Ruolo<input class="field" data-f="vcard.title"></label>
+        <label class="ctl">Telefono<input class="field" data-f="vcard.phone" inputmode="tel"></label>
+        <label class="ctl">E-mail<input class="field" data-f="vcard.email" spellcheck="false"></label>
+        <label class="ctl full">Sito web<input class="field" data-f="vcard.url" spellcheck="false"></label>
+      </div>
+      <div class="presets" data-el="presets">
+        <button class="chip" data-preset="classic">Classico</button><button class="chip" data-preset="soft">Morbido</button>
+        <button class="chip" data-preset="dots">Punti</button><button class="chip" data-preset="aurora">Sfumato</button>
+      </div>
+
+      <details open><summary>Forma</summary>
+        <div class="ctl">Moduli<div class="seg" data-k="body"><button data-v="square">Quadrati</button><button data-v="rounded">Arrotondati</button><button data-v="dots">Punti</button><button data-v="diamond">Rombi</button></div></div>
+        <div class="ctl">Cornice occhi<div class="seg" data-k="eyeFrame"><button data-v="square">Quadrata</button><button data-v="rounded">Arrotondata</button><button data-v="circle">Cerchio</button></div></div>
+        <div class="ctl">Centro occhi<div class="seg" data-k="eyeBall"><button data-v="square">Quadrato</button><button data-v="rounded">Arrotondato</button><button data-v="circle">Cerchio</button></div></div>
+        <label class="ctl">Margine<input type="range" min="0" max="8" step="1" data-k="margin"></label>
+      </details>
+
+      <details open><summary>Colori</summary>
+        <div class="colors">
+          <label>Moduli<input type="color" data-k="fg"></label>
+          <label class="check"><input type="checkbox" data-k="gradient"> Sfumatura</label>
+          <label>Fino a<input type="color" data-k="fg2"></label>
+          <label>Direzione<select class="field" data-k="gradDir"><option value="diag">Diagonale</option><option value="h">Orizzontale</option><option value="v">Verticale</option></select></label>
+        </div>
+        <div class="colors">
+          <label>Sfondo<input type="color" data-k="bg"></label>
+          <label class="check"><input type="checkbox" data-k="bgTransparent"> Trasparente</label>
+        </div>
+        <div class="colors">
+          <label>Cornice occhi<input type="color" data-k="frameColors.0"></label>
+          <label>Centro occhi<input type="color" data-k="ballColors.0"></label>
+          <label class="check"><input type="checkbox" data-k="eyeSep"> Un colore per ogni occhio</label>
+        </div>
+        <div class="colors eyesep" data-el="eyesep" hidden>
+          <label>Occhio 2 · cornice<input type="color" data-k="frameColors.1"></label><label>centro<input type="color" data-k="ballColors.1"></label>
+          <label>Occhio 3 · cornice<input type="color" data-k="frameColors.2"></label><label>centro<input type="color" data-k="ballColors.2"></label>
+        </div>
+        <div class="colors">
+          <label class="check"><input type="checkbox" data-k="brush"> Pennello: colora il singolo blocco</label>
+          <label>Colore pennello<input type="color" data-k="brushColor"></label>
+          <button class="btn small ghost" data-el="brush-clear">Azzera pennello</button>
+        </div>
+        <p class="hint" data-el="brushhint" hidden>Clicca o trascina sull'anteprima per colorare. Tasto destro per rimuovere il colore da un blocco.</p>
+      </details>
+
+      <details><summary>Logo</summary>
+        <div class="colors">
+          <button class="btn small ghost" data-el="logo-pick">Scegli logo…</button>
+          <button class="btn small ghost" data-el="logo-clear" hidden>Rimuovi</button>
+          <span class="muted" data-el="logo-name">Nessun logo</span>
+          <input type="file" accept="image/*" data-el="logo-file" hidden>
+        </div>
+        <label class="ctl">Dimensione<input type="range" min="10" max="28" step="1" data-k="logoSize"></label>
+        <div class="colors"><label class="check"><input type="checkbox" data-k="logoPlate"> Base dietro il logo</label><label>Colore base<input type="color" data-k="plateColor"></label></div>
+      </details>
+
+      <details><summary>Cornice</summary>
+        <div class="ctl">Stile<div class="seg" data-k="frameStyle"><button data-v="none">Nessuna</button><button data-v="border">Bordo</button><button data-v="label">Con scritta</button></div></div>
+        <div class="colors"><label>Colore<input type="color" data-k="frameColor"></label><label>Testo<input type="color" data-k="frameText"></label></div>
+        <label class="ctl">Scritta<input class="field" data-k="label" maxlength="28"></label>
+      </details>
+    </div>
+
+    <aside class="qr-preview">
+      <div class="stage"><canvas data-el="canvas" width="640" height="640" aria-label="Anteprima QR Code"></canvas></div>
+      <div class="qr-warn" data-el="warn"></div>
+      <div class="actions">
+        <button class="btn solid" data-el="save">Salva PNG</button>
+        <button class="btn ghost" data-el="copy">Copia</button>
+      </div>
+      <div class="qr-status muted" data-el="qrstatus"></div>
+    </aside>
+  </div>
+</template>
+
+<!-- ======================= STRUMENTO A RICETTA ======================= -->
+<template id="tpl-recipe">
+  <div class="wrap">
+    <h1 data-el="title"></h1>
+    <p class="sub" data-el="desc"></p>
+    <div data-el="input"></div>
+    <div class="row opts" data-el="opts"></div>
+    <div class="actions"><button class="btn solid" data-el="go">Avvia</button></div>
+  </div>
+</template>
+
+<!-- ======================= HOME ======================= -->
+<template id="tpl-home">
+  <div class="home-page">
+    <header class="hero">
+      <svg class="hero-art" viewBox="0 0 600 200" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
+        <g fill="#fff" opacity=".14">
+          <rect x="330" y="95" width="10" height="30" rx="5"/><rect x="350" y="70" width="10" height="80" rx="5"/>
+          <rect x="370" y="50" width="10" height="120" rx="5"/><rect x="390" y="80" width="10" height="60" rx="5"/>
+          <rect x="410" y="40" width="10" height="140" rx="5"/><rect x="430" y="75" width="10" height="70" rx="5"/>
+          <rect x="450" y="100" width="10" height="25" rx="5"/>
+        </g>
+        <circle cx="520" cy="100" r="62" fill="none" stroke="#fff" stroke-width="3" opacity=".22"/>
+        <path d="M502 72l44 28-44 28z" fill="#fff" opacity=".28"/>
+      </svg>
+      <div class="hero-in">
+        <svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ffffff22"/><path d="M32 14v24m0 0l-10-10m10 10l10-10" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 48h32" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>
+        <div class="hero-text">
+          <h1>TubeGrabber</h1>
+          <p>Professional Suite</p>
+          <span class="by">By Lorenzo Orlandi</span>
+        </div>
+      </div>
+    </header>
+    <div class="wrap home">
+      <h2 class="home-title">Cosa vuoi fare oggi?</h2>
+      <p class="sub">Scegli uno strumento: si apre in questa scheda. Puoi aprire più schede e lavorare su più cose insieme.</p>
+      <div class="cards" data-el="cards"></div>
+      <h3 class="extra-title" data-el="extratitle" hidden>Strumenti extra</h3>
+      <div class="cards" data-el="cards2"></div>
+    </div>
+  </div>
+</template>
+
+<!-- ======================= IMPOSTAZIONI ======================= -->
+<template id="tpl-settings">
+  <div class="wrap settings">
+    <h1>Impostazioni</h1>
+    <p class="sub">Le scelte si salvano subito e vengono ricordate a ogni avvio.</p>
+
+    <section class="panel-s"><h2>Cartella e avvisi</h2>
+      <label class="ctl">Cartella di salvataggio predefinita
+        <div class="folder"><input class="field" data-el="outdir" spellcheck="false"><button class="btn ghost" data-el="browse">Cambia…</button></div></label>
+      <label class="check"><input type="checkbox" data-el="openfolder"> Apri la cartella quando finisce</label>
+      <label class="check"><input type="checkbox" data-el="notify"> Mostrami una notifica quando finisce (se la finestra è in secondo piano)</label>
+    </section>
+
+    <section class="panel-s"><h2>YouTube: scelte predefinite</h2>
+      <div class="row tight">
+        <label class="ctl">Qualità video
+          <select data-el="ytq" class="field"><option value="max">Massima (4K/ottimale)</option><option value="1080">1080p</option><option value="720">720p</option><option value="480">480p</option><option value="360">360p</option></select></label>
+        <label class="ctl">Audio
+          <select data-el="yta" class="field"><option value="mp3">MP3 · massima qualità (VBR V0)</option><option value="best">Originale · senza ricodifica</option></select></label>
+        <label class="check"><input type="checkbox" data-el="ytc"> Copertina quadrata</label>
+      </div>
+    </section>
+
+    <section class="panel-s"><h2>Programmi di sistema</h2>
+      <p class="hint">Se i download da YouTube smettono di funzionare, quasi sempre basta aggiornare yt-dlp.</p>
+      <div class="toolrow"><div><strong>yt-dlp</strong><span class="muted" data-el="ytv">…</span></div><button class="btn ghost small" data-el="up-yt">Aggiorna ora</button></div>
+      <label class="check"><input type="checkbox" data-el="autoyt"> Controlla e aggiorna yt-dlp in automatico (consigliato)</label>
+      <div class="toolrow"><div><strong>ffmpeg</strong><span class="muted" data-el="ffv">…</span></div>
+        <div class="btns"><button class="btn ghost small" data-el="up-ff">Aggiorna ffmpeg</button><button class="btn ghost small" data-el="reset-ff" hidden>Usa quello incluso</button></div></div>
+      <p class="hint" data-el="ffhint"></p>
+      <div class="status" data-el="toolstatus" role="status"></div>
+    </section>
+
+    <section class="panel-s"><h2>Strumenti extra</h2>
+      <p class="hint">Pagine aggiuntive pubblicate da Lorenzo: compaiono nella Home senza reinstallare l'app.</p>
+      <label class="check"><input type="checkbox" data-el="extra"> Carica gli strumenti extra (aggiornati online)</label>
+      <div class="toolrow"><div><strong data-el="extrainfo">…</strong><span class="muted" data-el="extrasrc"></span></div><button class="btn ghost small" data-el="extrarefresh">Aggiorna elenco</button></div>
+      <pre class="problems" data-el="problems" hidden></pre>
+    </section>
+
+    <section class="panel-s"><h2>Aggiornamenti di TubeGrabber</h2>
+      <label class="check"><input type="checkbox" data-el="chkupd"> Controlla se c'è una nuova versione all'avvio</label>
+      <div class="row tight"><button class="btn ghost small" data-el="chknow">Verifica adesso</button></div>
+    </section>
+
+    <section class="panel-s"><h2>Segnalare un problema</h2>
+      <p class="hint">Se qualcosa non funziona clicca <strong>Segnala problema</strong> in basso (o <strong>Segnala errore</strong> che compare dopo un errore). Si apre una finestra con le informazioni già pronte da inviare a <span data-el="mail"></span>. Il tuo nome utente di Windows viene nascosto.</p>
+    </section>
+  </div>
+</template>
+
+<!-- ======================= BARRA COMUNE (cartella, avanzamento) ======================= -->
+<template id="tpl-dock">
+  <div class="dock">
+    <div class="dock-row">
+      <label class="ctl grow">Cartella di output
+        <div class="folder"><input class="field" data-el="outdir" spellcheck="false"><button class="btn ghost" data-el="browse">Cambia…</button></div></label>
+      <label class="check"><input type="checkbox" data-el="openfolder"> Apri la cartella al termine</label>
+    </div>
+    <div class="progress"><div class="progress-bar" data-el="bar"></div></div>
+    <div class="dock-row">
+      <div class="status" data-el="status" role="status">Pronto.</div>
+      <span class="report" data-el="report" hidden><button class="link" data-el="send">Segnala errore</button><button class="link" data-el="copydet">Copia dettagli</button></span>
+      <button class="btn danger small" data-el="cancel" disabled>Annulla</button>
+    </div>
+  </div>
+</template>
+
+<div class="modal" id="report-modal" hidden role="dialog" aria-modal="true" aria-labelledby="rm-title">
+  <div class="modal-box">
+    <h2 id="rm-title">Segnala un problema a Lorenzo</h2>
+    <p class="hint">Le informazioni tecniche sono già pronte. Scegli come inviarle, poi premi <strong>Invia</strong> nella tua posta.</p>
+    <label class="ctl">Vuoi aggiungere una nota? (facoltativo)
+      <textarea class="field" id="rm-note" rows="3" placeholder="Cosa stavi facendo quando è successo?"></textarea></label>
+    <details><summary>Vedi cosa viene inviato</summary><pre id="rm-details"></pre></details>
+    <div class="modal-actions">
+      <button class="btn solid" id="rm-gmail">Invia con Gmail</button>
+      <button class="btn ghost" id="rm-mail">Programma di posta</button>
+      <button class="btn ghost" id="rm-copy">Copia tutto</button>
+    </div>
+    <p class="hint" id="rm-msg"></p>
+    <button class="btn ghost small" id="rm-close">Chiudi</button>
+  </div>
+</div>
+
+<script src="../shared/formats.js"></script>
+<script src="../shared/qrtemplates.js"></script>
+<script src="vendor/qrcode.js"></script>
+<script src="tools/youtube.js"></script>
+<script src="tools/convert.js"></script>
+<script src="tools/drone.js"></script>
+<script src="tools/qr.js"></script>
+<script src="tools/recipe.js"></script>
+<script src="tools/home.js"></script>
+<script src="tools/settings.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "updateUrl": "https://raw.githubusercontent.com/Lolloorl/tubegrabber/main/docs/latest.json",
+  "checkOnStartup": true,
+  "supportEmail": "lorenzo.orlandi011@gmail.com",
+  "toolsUrl": "https://raw.githubusercontent.com/Lolloorl/tubegrabber/main/docs/strumenti.json"
+}

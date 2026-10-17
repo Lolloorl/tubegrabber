@@ -1,0 +1,70 @@
+{
+  "name": "tubegrabber",
+  "productName": "TubeGrabber",
+  "version": "2.2.0",
+  "description": "TubeGrabber - Professional Suite (By Lorenzo Orlandi)",
+  "author": "Lorenzo Orlandi",
+  "license": "UNLICENSED",
+  "main": "main.js",
+  "scripts": {
+    "postinstall": "node scripts/copy-vendor.js",
+    "start": "electron .",
+    "test": "node --test test/core.test.js",
+    "dist:win": "electron-builder --win nsis --x64",
+    "dist:mac": "electron-builder --mac dmg"
+  },
+  "dependencies": {
+    "qrcode-generator": "^1.4.4"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "it.lorenzoorlandi.tubegrabber",
+    "productName": "TubeGrabber",
+    "copyright": "By Lorenzo Orlandi",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "config/**/*",
+      "recipes/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "bin/${os}",
+        "to": "bin/${os}"
+      }
+    ],
+    "artifactName": "TubeGrabber-${version}-${os}-${arch}.${ext}",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg"
+        }
+      ],
+      "category": "public.app-category.video"
+    }
+  }
+}

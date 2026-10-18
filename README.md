@@ -6,11 +6,10 @@ By Lorenzo Orlandi
 
 ## 🛠️ Cosa puoi fare
 
-- 📥 **Scarica da YouTube**: video (fino a 4K) o audio MP3, da singoli link o da intere playlist.
-- 🔄 **Converti file**: trasforma video, audio e immagini (MP4, MP3, WAV, MKV, PNG, JPG e altri).
+- 📥 **Scarica da YouTube**: video (fino a 4K) o audio MP3, da singoli link o da intere playlist, anche con i sottotitoli.
+- 🔄 **Converti file**: trasforma video, audio e immagini (MP4, MP3, WAV, MKV, PNG, JPG e altri). Puoi comprimere e ruotare i video e ridimensionare le foto.
 - 🚁 **Drone Sync**: unisce e sincronizza i video del drone con le loro tracce audio.
 - ◻️ **QR Studio**: QR Code personalizzati, anche per Wi-Fi, WhatsApp, e-mail e biglietto da visita.
-- ✨ **Strumenti extra**: estrai audio, video in GIF, ruota video, foto più leggere e altri in arrivo.
 
 ## ⬇️ Come scaricarla
 

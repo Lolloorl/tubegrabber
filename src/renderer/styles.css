@@ -251,3 +251,9 @@ details>*:not(summary){margin-top:12px}
 .opts input[type=number],.opts input[type=text]{background:var(--field);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
 .problems{margin:0;padding:10px 12px;background:#2a1c20;border:1px solid #6d3341;border-radius:10px;color:#ffb4bf;font-size:12px;white-space:pre-wrap;max-height:220px;overflow:auto;font-family:Consolas,monospace}
 .problems[hidden]{display:none}
+
+/* ---------- opzioni del convertitore divise per tipo ---------- */
+.optpanel{background:#20242b;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:16px}
+.optpanel h3{margin:0 0 10px;font-size:14px;font-weight:600}
+.subs-row{margin:6px 0 0}
+.subs-row .btn.small{margin-bottom:1px}

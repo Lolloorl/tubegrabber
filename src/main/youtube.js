@@ -33,7 +33,13 @@ function buildArgs(o) {
   if (o.ffmpegDir) args.push('--ffmpeg-location', o.ffmpegDir);
   if (o.jsRuntime) args.push('--js-runtimes', o.jsRuntime);
 
-  if (o.mode === 'mp3') {
+  const langs = { it: 'it', en: 'en', both: 'it,en' }[o.subs];
+  const subArgs = ['--write-subs', '--write-auto-subs', '--sub-langs', langs];
+
+  if (o.mode === 'subs') {
+    // solo sottotitoli: niente video, file .srt accanto (o nella cartella della playlist)
+    if (langs) args.push('--skip-download', ...subArgs, '--convert-subs', 'srt');
+  } else if (o.mode === 'mp3') {
     const fmt = o.audioFmt === 'best' ? 'best' : 'mp3';
     args.push('-f', 'bestaudio/best', '-x', '--audio-format', fmt, '--audio-quality', '0',
       '--embed-metadata', '--embed-thumbnail', '--convert-thumbnails', 'jpg');
@@ -44,12 +50,14 @@ function buildArgs(o) {
       args.push('--parse-metadata', '%(album,playlist_title|)s:%(meta_album)s',
         '--parse-metadata', '%(playlist_index|)s:%(meta_track)s');
     }
+    // l'audio non puo contenere sottotitoli: vengono salvati in un file .srt accanto al brano
+    if (langs) args.push(...subArgs, '--convert-subs', 'srt');
   } else {
     args.push('-f', QUALITY[o.quality] || QUALITY.max, '--recode-video', 'mp4');
-    const langs = { it: 'it', en: 'en', both: 'it,en' }[o.subs];
-    if (langs) args.push('--write-subs', '--write-auto-subs', '--sub-langs', langs, '--embed-subs');
+    // nel video i sottotitoli vengono incorporati (si attivano dal lettore)
+    if (langs) args.push(...subArgs, '--embed-subs');
   }
-  if (o.sectionStart && o.sectionEnd) {
+  if (o.mode !== 'subs' && o.sectionStart && o.sectionEnd) {
     args.push('--download-sections', `*${String(o.sectionStart).trim()}-${String(o.sectionEnd).trim()}`, '--force-keyframes-at-cuts');
   }
   args.push('-o', outputTemplate(o.outDir, playlist, o.byChannel));

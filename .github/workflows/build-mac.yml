@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release a cui aggiungere il file Mac (es. v2.2.0)"
+        description: "Release a cui aggiungere il file Mac (es. v2.2.1)"
         required: true
-        default: "v2.2.0"
+        default: "v2.2.1"
 permissions:
   contents: write
 jobs:

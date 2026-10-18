@@ -28,5 +28,24 @@
   ];
   // CRF per la compressione (solo formati x264)
   const compression = { none: null, high: 20, balanced: 24, strong: 28 };
-  return { list, compression, byId: (id) => list.find((f) => f.id === id) };
+  const ROT = { right: 'transpose=1', left: 'transpose=2', half: 'transpose=1,transpose=1' };
+  const JPG_Q = { high: 2, medium: 5, low: 10 }, WEBP_Q = { high: 90, medium: 75, low: 50 };
+  // Argomenti ffmpeg finali per un formato, con le opzioni scelte (ruota, dimensione/qualita foto, compressione video)
+  function applyOptions(fmt, o) {
+    o = o || {}; const args = fmt.args.slice(); const filters = [];
+    if (fmt.kind !== 'audio' && ROT[o.rotate]) filters.push(ROT[o.rotate]);
+    if (fmt.kind === 'image') {
+      const m = parseInt(o.maxSide, 10);
+      if ([800, 1280, 1920, 3840].includes(m)) filters.push(`scale='if(gt(iw,ih),min(${m},iw),-2)':'if(gt(iw,ih),-2,min(${m},ih))'`);
+      const i = args.indexOf('-q:v');
+      if (i >= 0 && fmt.id === 'jpg' && JPG_Q[o.quality]) args[i + 1] = String(JPG_Q[o.quality]);
+      if (i >= 0 && fmt.id === 'webp' && WEBP_Q[o.quality]) args[i + 1] = String(WEBP_Q[o.quality]);
+      args.push('-update', '1');
+    }
+    if (filters.length) { const i = args.indexOf('-vf'); if (i >= 0) args[i + 1] = filters.join(',') + ',' + args[i + 1]; else args.push('-vf', filters.join(',')); }
+    const crf = fmt.x264 ? compression[o.compression] : null;
+    if (crf) args.push('-crf', String(crf));
+    return args;
+  }
+  return { list, compression, applyOptions, byId: (id) => list.find((f) => f.id === id) };
 });

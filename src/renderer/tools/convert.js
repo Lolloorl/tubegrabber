@@ -16,7 +16,13 @@ window.Tools.convert = function (ctx) {
   function select(id) {
     format = id;
     ctx.root.querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c.dataset.id === id));
-    const x264 = !!F.byId(id).x264; el('compression').disabled = !x264;
+    const f = F.byId(id);
+    // a ogni tipo di file le sue opzioni: video, foto oppure nessuna (audio)
+    el('opts-video').hidden = f.kind !== 'video';
+    el('opts-image').hidden = f.kind !== 'image';
+    el('opts-audio').hidden = f.kind !== 'audio';
+    el('compression').disabled = !f.x264;     // la compressione vale per MP4, MKV, MOV
+    el('quality').disabled = id === 'png';    // il PNG non ha qualita
   }
   select('mp4');
 
@@ -42,6 +48,11 @@ window.Tools.convert = function (ctx) {
   el('go').addEventListener('click', () => {
     if (!files.length) { dock.setStatus('Aggiungi prima i file da convertire.', 'error'); return; }
     states.clear(); render();
-    dock.start('convert', { files: files.map((f) => f.path), format, compression: el('compression').value });
+    const kind = F.byId(format).kind;
+    dock.start('convert', {
+      files: files.map((f) => f.path), format, compression: el('compression').value,
+      rotate: kind === 'video' ? el('rotate-v').value : kind === 'image' ? el('rotate-i').value : 'none',
+      maxSide: el('maxside').value, quality: el('quality').value
+    });
   });
 };

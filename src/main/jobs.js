@@ -17,6 +17,7 @@ async function runYoutube(job, p, emit, ctx) {
   const links = (p.links || []).map((s) => String(s).trim()).filter(Boolean);
   if (!links.length) return { status: 'error', message: 'Inserisci almeno un link o una playlist.' };
   if (!ctx.bins.ytdlp) return missing('yt-dlp');
+  if (p.mode === 'subs' && !['it', 'en', 'both'].includes(p.subs)) return C.fail('Scegli prima la lingua dei sottotitoli.');
   if (p.section && p.section.start) {
     if (!yt.validTime(p.section.start) || !yt.validTime(p.section.end)) return C.fail('Tratto non valido: usa secondi o mm:ss (es. 1:30).');
   }
@@ -24,7 +25,7 @@ async function runYoutube(job, p, emit, ctx) {
 
   const log = [];
   if (!ctx.bins.jsRuntime) log.push('AVVISO: nessun runtime JavaScript (deno/node) trovato: alcuni formati YouTube potrebbero mancare.');
-  let ok = 0, errors = 0, lastErr = '', anyDownloaded = false;
+  let ok = 0, errors = 0, lastErr = '', anyDownloaded = false, noSubs = false;
   const finals = new Map();   // file finale per ogni brano (l'ultimo percorso visto vince)
   const stemOf = (f) => f.replace(/\.f\d+\.[A-Za-z0-9]+$/, '').replace(/\.[A-Za-z0-9]{2,5}$/, '');
 
@@ -60,6 +61,7 @@ async function runYoutube(job, p, emit, ctx) {
       else if (/^\[ExtractAudio\]/.test(line)) emit({ type: 'status', level: 'info', text: `${pfx}Conversione audio...` });
       else if (/^\[(Metadata|EmbedThumbnail|ThumbnailsConvertor)\]/.test(line)) emit({ type: 'status', level: 'info', text: `${pfx}Inserimento copertina e metadati...` });
       else if (/^\[(Merger|VideoConvertor|VideoRemuxer)\]/.test(line)) emit({ type: 'status', level: 'info', text: `${pfx}Elaborazione video (può richiedere tempo)...` });
+      else if (/There are no subtitles for the requested languages/i.test(line)) noSubs = true;
       else if (/^ERROR:/.test(line)) lastErr = line.replace(/^ERROR:\s*/, '');
     });
 
@@ -68,8 +70,12 @@ async function runYoutube(job, p, emit, ctx) {
     if (res.code === 0) ok++; else { errors++; if (!lastErr) lastErr = res.error || `yt-dlp ha terminato con codice ${res.code}`; }
   }
   ctx.writeLog('youtube', log);
-  const s = summarize(job, ok, errors, lastErr, 'Download');
+  const s = summarize(job, ok, errors, lastErr, p.mode === 'subs' ? 'Download sottotitoli' : 'Download');
   if (s.status === 'error' && anyDownloaded) { s.status = 'warn'; }
+  if (noSubs && s.status === 'ok') {
+    s.status = 'warn';
+    s.message = p.mode === 'subs' ? 'Nessun sottotitolo disponibile in questa lingua.' : s.message + ' Nota: non ci sono sottotitoli in questa lingua.';
+  }
   s.outputs = [...finals.values()].filter((f) => fs.existsSync(f)).slice(-20);
   return s;
 }
@@ -83,7 +89,6 @@ async function runConvert(job, p, emit, ctx) {
   if (!ctx.bins.ffmpeg) return missing('ffmpeg');
   if (!ensureDir(p.outDir)) return { status: 'error', message: 'La cartella di output non esiste e non si riesce a crearla.' };
 
-  const crf = fmt.x264 ? Formats.compression[p.compression] : null;
   const log = []; const outputs = []; let ok = 0, errors = 0, lastErr = '';
 
   for (let i = 0; i < files.length; i++) {
@@ -93,9 +98,8 @@ async function runConvert(job, p, emit, ctx) {
     if (path.resolve(out).toLowerCase() === path.resolve(inFile).toLowerCase()) out = path.join(p.outDir, `${name}_convertito.${fmt.ext}`);
     out = uniquePath(out);
 
-    const args = ['-hide_banner', '-y', '-i', inFile, ...fmt.args];
-    if (crf) args.push('-crf', String(crf));
-    args.push(out);
+    // opzioni scelte dall'utente: compressione, rotazione, dimensione e qualita delle foto
+    const args = ['-hide_banner', '-y', '-i', inFile, ...Formats.applyOptions(fmt, p), out];
 
     const pfx = files.length > 1 ? `[${i + 1}/${files.length}] ` : '';
     emit({ type: 'item', path: inFile, state: 'running' });

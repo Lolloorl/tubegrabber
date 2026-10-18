@@ -52,6 +52,14 @@
         </select></label>
       <label class="check"><input type="checkbox" data-el="cover" checked> Copertina quadrata</label>
     </div>
+    <div class="row subs-row">
+      <label class="ctl">Sottotitoli
+        <select data-el="subs" class="field">
+          <option value="none">Nessuno</option><option value="it">Italiano</option><option value="en">Inglese</option><option value="both">Italiano e inglese</option>
+        </select></label>
+      <button class="btn ghost small" data-el="go-subs" title="Scarica solo i sottotitoli, senza il video">Solo sottotitoli (.srt)</button>
+    </div>
+    <p class="hint">Con MP4 i sottotitoli finiscono dentro il video (si attivano dal lettore). Con MP3 viene salvato un file .srt accanto al brano.</p>
     <div class="actions">
       <button class="btn solid alt" data-el="go-mp3">Scarica MP3</button>
       <button class="btn solid" data-el="go-mp4">Scarica MP4</button>
@@ -74,13 +82,30 @@
         <div class="fgroup"><div class="flabel">Immagine</div><div class="chips" data-el="chips-image"></div></div>
       </div>
     </div>
-    <div class="row">
-      <label class="ctl">Compressione video
-        <select data-el="compression" class="field">
-          <option value="none">Nessuna (qualità standard)</option><option value="high">Alta qualità</option>
-          <option value="balanced">Bilanciata</option><option value="strong">Massima compressione</option>
-        </select></label>
+    <div class="optpanel" data-el="opts-video">
+      <h3>Opzioni video</h3>
+      <div class="row tight">
+        <label class="ctl">Compressione
+          <select data-el="compression" class="field">
+            <option value="none">Nessuna (qualità standard)</option><option value="high">Alta qualità</option>
+            <option value="balanced">Bilanciata</option><option value="strong">Massima compressione</option>
+          </select></label>
+        <label class="ctl">Ruota il video
+          <select data-el="rotate-v" class="field"><option value="none">Non ruotare</option><option value="right">90° a destra</option><option value="left">90° a sinistra</option><option value="half">180° (capovolgi)</option></select></label>
+      </div>
     </div>
+    <div class="optpanel" data-el="opts-image" hidden>
+      <h3>Opzioni foto</h3>
+      <div class="row tight">
+        <label class="ctl">Dimensione massima
+          <select data-el="maxside" class="field"><option value="0">Originale</option><option value="3840">3840 px (4K)</option><option value="1920">1920 px (Full HD)</option><option value="1280">1280 px</option><option value="800">800 px</option></select></label>
+        <label class="ctl">Qualità
+          <select data-el="quality" class="field"><option value="high">Alta</option><option value="medium">Media (più leggera)</option><option value="low">Bassa (leggerissima)</option></select></label>
+        <label class="ctl">Ruota la foto
+          <select data-el="rotate-i" class="field"><option value="none">Non ruotare</option><option value="right">90° a destra</option><option value="left">90° a sinistra</option><option value="half">180° (capovolgi)</option></select></label>
+      </div>
+    </div>
+    <p class="hint" data-el="opts-audio" hidden>Per l'audio non ci sono opzioni: viene convertito così com'è.</p>
     <div class="actions"><button class="btn solid" data-el="go">Avvia conversione</button></div>
   </div>
 </template>

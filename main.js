@@ -110,7 +110,7 @@ async function updateTool(which, { silent } = {}) {
 app.whenReady().then(() => {
   store = createStore(app.getPath('userData'), {
     outDir: app.getPath('downloads'), openFolder: true, notify: true, autoYtdlp: true, checkUpdates: true,
-    ytQuality: 'max', ytAudio: 'mp3', ytCover: true, lastYtdlpCheck: 0, extraTools: true
+    ytQuality: 'max', ytAudio: 'mp3', ytCover: true, ytSubs: 'none', lastYtdlpCheck: 0, extraTools: true
   });
   userBin = path.join(app.getPath('userData'), 'bin');
   refreshBins();

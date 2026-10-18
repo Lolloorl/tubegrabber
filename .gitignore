@@ -4,3 +4,11 @@ src/renderer/vendor/qrcode.js
 bin/win/*
 bin/mac/*
 !bin/**/.gitkeep
+
+# Materiale da admin: resta solo sul tuo PC, non va su GitHub
+ADMIN_Editor_Strumenti.html
+GUIDA_ADMIN.md
+LEGGIMI_SVILUPPO.md
+bin/README.md
+futuro/
+test/

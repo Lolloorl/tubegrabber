@@ -1,9 +1,9 @@
 {
-  "version": "2.1.0",
+  "version": "2.1.1",
   "mandatory": false,
-  "releaseDate": "2026-10-14",
-  "notes": "Nuova Home, impostazioni, aggiornamento automatico di yt-dlp, notifiche, modelli QR (Wi-Fi, WhatsApp, e-mail, biglietto da visita).",
+  "releaseDate": "2026-10-19",
+  "notes": "Sottotitoli, ruota i video e riduci peso e dimensioni delle foto, Nuova Home con banner, aggiornamento automatico di yt-dlp, nuova versione per mac",
   "downloads": {
-    "win": "https://github.com/Lolloorl/tubegrabber/releases/download/v2.1.0/TubeGrabber-2.1.0-win-x64.exe"
+    "win": "https://github.com/Lolloorl/tubegrabber/releases/download/v2.1.1/TubeGrabber-2.1.1-win-x64.exe"
   }
 }

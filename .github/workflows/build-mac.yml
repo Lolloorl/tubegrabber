@@ -1,18 +1,27 @@
-# Costruisce la versione per Mac (Apple Silicon: M1, M2, M3, M4...) e la allega a una release esistente.
+# Costruisce la versione per Mac in DUE varianti e le allega a una release esistente:
+#   - Apple Silicon (M1, M2, M3, M4...)  -> TubeGrabber-<versione>-mac-arm64.dmg
+#   - Intel (Mac fino al 2020 circa)     -> TubeGrabber-<versione>-mac-x64.dmg
 # Si avvia a mano da GitHub: scheda Actions -> "Costruisci versione Mac" -> Run workflow.
 name: Costruisci versione Mac
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release a cui aggiungere il file Mac (es. v2.2.1)"
+        description: "Release a cui aggiungere i file Mac (es. v2.3.1)"
         required: true
-        default: "v2.2.1"
+        default: "v2.3.1"
 permissions:
   contents: write
 jobs:
   mac:
+    name: Mac ${{ matrix.label }}
     runs-on: macos-latest
+    strategy:
+      fail-fast: false          # se una variante fallisce, l'altra viene costruita lo stesso
+      matrix:
+        include:
+          - { arch: arm64, label: "Apple Silicon", deno: aarch64, macho: arm64 }
+          - { arch: x64,   label: "Intel",         deno: x86_64,  macho: x86_64 }
     env:
       CSC_IDENTITY_AUTO_DISCOVERY: "false"   # niente firma Apple a pagamento: usiamo la firma "ad-hoc" qui sotto
     steps:
@@ -34,33 +43,52 @@ jobs:
           EXPECTED=$(grep -E ' \*?yt-dlp_macos$' sums.txt | awk '{print $1}')
           ACTUAL=$(shasum -a 256 bin/mac/yt-dlp | awk '{print $1}')
           if [ -z "$EXPECTED" ] || [ "$EXPECTED" != "$ACTUAL" ]; then echo "ERRORE: controllo di integrità di yt-dlp fallito"; exit 1; fi
-          curl -fL https://github.com/denoland/deno/releases/latest/download/deno-aarch64-apple-darwin.zip -o deno.zip
+          curl -fL "https://github.com/denoland/deno/releases/latest/download/deno-${{ matrix.deno }}-apple-darwin.zip" -o deno.zip
           unzip -o deno.zip -d bin/mac
-          mkdir ffwork && cd ffwork && npm init -y > /dev/null && npm install ffmpeg-static
+          mkdir ffwork && cd ffwork && npm init -y > /dev/null
+          npm_config_arch=${{ matrix.arch }} npm install ffmpeg-static
           cp "$(node -p "require('ffmpeg-static')")" ../bin/mac/ffmpeg
           cd ..
           chmod +x bin/mac/yt-dlp bin/mac/deno bin/mac/ffmpeg
-          echo "--- programmi inclusi ---"
-          ls -la bin/mac
-          bin/mac/yt-dlp --version
-          bin/mac/ffmpeg -version | head -1
-          bin/mac/deno --version | head -1
+          if ! file bin/mac/ffmpeg | grep -q "${{ matrix.macho }}"; then
+            if [ "${{ matrix.arch }}" = "x64" ]; then
+              echo "ffmpeg-static non ha dato la versione Intel: provo un'altra fonte"
+              curl -fL https://evermeet.cx/ffmpeg/getrelease/zip -o ff.zip
+              unzip -o ff.zip -d bin/mac
+              chmod +x bin/mac/ffmpeg
+            fi
+          fi
+          echo "--- architettura dei programmi inclusi ---"
+          file bin/mac/yt-dlp bin/mac/deno bin/mac/ffmpeg
+          file bin/mac/ffmpeg | grep -q "${{ matrix.macho }}" || { echo "ERRORE: ffmpeg non è per ${{ matrix.label }}"; exit 1; }
+          file bin/mac/deno   | grep -q "${{ matrix.macho }}" || { echo "ERRORE: deno non è per ${{ matrix.label }}"; exit 1; }
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            bin/mac/yt-dlp --version; bin/mac/ffmpeg -version | head -1; bin/mac/deno --version | head -1
+          fi
 
       - name: Costruisci l'applicazione
-        run: npx electron-builder --mac --arm64 --dir --publish never
+        run: |
+          set -e
+          npx electron-builder --mac --${{ matrix.arch }} --dir --publish never
+          APP=$(find dist -maxdepth 2 -name "TubeGrabber.app" -type d | head -1)
+          [ -n "$APP" ] || { echo "ERRORE: applicazione non trovata in dist"; exit 1; }
+          echo "APP=$APP" >> "$GITHUB_ENV"
+          echo "Applicazione: $APP"
 
       - name: Firma ad-hoc e controlla
         run: |
           set -e
-          APP="dist/mac-arm64/TubeGrabber.app"
           codesign --force --deep --sign - "$APP"
           codesign --verify --deep --strict "$APP"
-          echo "--- programmi dentro l'app (devono partire) ---"
-          "$APP/Contents/Resources/bin/mac/yt-dlp" --version
-          "$APP/Contents/Resources/bin/mac/ffmpeg" -version | head -1
+          file "$APP/Contents/MacOS/TubeGrabber"
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            echo "--- programmi dentro l'app (devono partire) ---"
+            "$APP/Contents/Resources/bin/mac/yt-dlp" --version
+            "$APP/Contents/Resources/bin/mac/ffmpeg" -version | head -1
+          fi
 
       - name: Crea il file .dmg
-        run: npx electron-builder --mac dmg --arm64 --prepackaged "dist/mac-arm64/TubeGrabber.app" --publish never
+        run: npx electron-builder --mac dmg --${{ matrix.arch }} --prepackaged "$APP" --publish never
 
       - name: Allega il .dmg alla release
         uses: softprops/action-gh-release@v2

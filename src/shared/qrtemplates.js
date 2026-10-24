@@ -34,5 +34,8 @@
       return L.join('\n');
     }
   };
-  return { types, compose: (type, f) => (types[type] ? types[type](f || {}) : '') };
+  // "Pizzeria Roma" -> "pizzeria_roma": minuscole, senza accenti, spazi e trattini diventano "_"
+  const normalizeAlias = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[\s-]+/g, '_').replace(/[^a-z0-9_]/g, '').replace(/_+/g, '_').replace(/^_|_$/g, '');
+  return { types, normalizeAlias, compose: (type, f) => (types[type] ? types[type](f || {}) : '') };
 });

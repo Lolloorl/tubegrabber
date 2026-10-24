@@ -44,10 +44,40 @@ window.Tools.qr = function (ctx) {
   const textInput = root.querySelector('input[data-k="text"]');
   const F = { wifi: { sec: 'WPA' }, whatsapp: {}, email: {}, vcard: {} };
   let qrType = 'text';
-  function compose() {
-    S.text = qrType === 'text' ? textInput.value : window.QRTemplates.compose(qrType, F[qrType]);
-    schedule();
+  // --- accorciatore di link (solo per il tipo "Link / testo")
+  const shortCache = new Map(), shortFailed = new Set();
+  let shortTimer = 0, shortSeq = 0;
+  const shortSay = (t, cls) => { const e = el('shortstatus'); e.textContent = t; e.className = 'hint short-status' + (cls ? ' ' + cls : ''); };
+  const isUrl = (t) => /^https?:\/\/\S+$/i.test(t);
+  async function requestShort(url, alias, key) {
+    const my = ++shortSeq; shortSay('Accorcio il link…');
+    let r; try { r = await ctx.api.shortenUrl(url, alias); } catch (e) { r = { ok: false, error: 'errore imprevisto' }; }
+    if (my !== shortSeq) return;                         // nel frattempo il link o il nome sono cambiati
+    if (r.ok) { shortCache.set(key, r.url); shortSay(`Link breve: ${r.url}`, 'ok'); compose(); }
+    else { shortFailed.add(key); shortSay(`Non riesco ad accorciarlo: ${r.error}. Uso il link originale.`, 'err'); }
   }
+  function compose() {
+    if (qrType !== 'text') { S.text = window.QRTemplates.compose(qrType, F[qrType]); schedule(); return; }
+    const base = textInput.value.trim();
+    const wants = el('shorten').checked;
+    el('aliasbox').hidden = !wants;
+    const alias = wants ? window.QRTemplates.normalizeAlias(el('alias').value) : '';
+    if (wants) el('aliashint').textContent = alias ? `Il link sarà: https://is.gd/${alias}` : 'Lascia vuoto per un link casuale (es. is.gd/aB3dE9).';
+    const key = base + '|' + alias;
+    S.text = wants && isUrl(base) && shortCache.has(key) ? shortCache.get(key) : textInput.value;
+    schedule();
+    clearTimeout(shortTimer);
+    if (!wants) { shortSay(''); return; }
+    if (!isUrl(base)) { shortSay('Scrivi un link che inizi con http:// o https://', 'err'); return; }
+    if (alias && (alias.length < 5 || alias.length > 30)) { shortSay('Il nome personalizzato deve avere da 5 a 30 caratteri (lettere, numeri e _).', 'err'); return; }
+    if (base.length <= 28 && !alias) { shortSay('Il link è già corto: non serve accorciarlo.'); return; }
+    if (shortCache.has(key)) { shortSay(`Link breve: ${shortCache.get(key)}`, 'ok'); return; }
+    if (shortFailed.has(key)) return;
+    shortSay('Attendo che finisci di scrivere…');
+    shortTimer = setTimeout(() => requestShort(base, alias, key), 800);   // non si contatta il servizio a ogni lettera
+  }
+  el('shorten').addEventListener('change', () => { shortFailed.clear(); compose(); });
+  el('alias').addEventListener('input', compose);
   function setType(t) {
     qrType = t;
     el('qrtype').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === t));
@@ -97,7 +127,8 @@ window.Tools.qr = function (ctx) {
 
   function makeMatrix(text) {
     window.qrcode.stringToBytes = window.qrcode.stringToBytesFuncs['UTF-8'];
-    const qr = window.qrcode(0, 'H');   // correzione errori H (30%): necessaria per coprire il centro con un logo
+    // correzione errori: H (30%) solo se c'e un logo da coprire; senza logo basta M (15%) e il QR e meno fitto
+    const qr = window.qrcode(0, logo ? 'H' : 'M');
     qr.addData(text || ' '); qr.make();
     return qr;
   }
@@ -183,9 +214,14 @@ window.Tools.qr = function (ctx) {
     w.className = 'qr-warn ' + msg[0]; w.textContent = msg[1];
   }
 
+  function showDensity() {
+    const n = last.n, d = el('density');
+    d.className = 'qr-density' + (n > 45 ? ' dense' : '');
+    d.textContent = n <= 33 ? `QR semplice (${n}×${n})` : n <= 45 ? `QR medio (${n}×${n})` : `QR molto fitto (${n}×${n}): prova ad accorciare il link`;
+  }
   function render() {
     raf = 0;
-    try { last = draw(canvas, 640); el('qrstatus').textContent = ''; checkReadable(); }
+    try { last = draw(canvas, 640); el('qrstatus').textContent = ''; checkReadable(); showDensity(); }
     catch (e) { el('warn').className = 'qr-warn warn'; el('warn').textContent = 'Testo troppo lungo per un QR Code'; }
   }
   function schedule() { if (!raf) raf = requestAnimationFrame(render); }

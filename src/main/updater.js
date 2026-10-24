@@ -10,7 +10,7 @@ function compareVersions(a, b) {
   return 0;
 }
 
-async function checkForUpdate({ url, currentVersion, platform, fetchFn }) {
+async function checkForUpdate({ url, currentVersion, platform, arch, fetchFn }) {
   if (!url || /TUO-UTENTE/i.test(url)) return { status: 'not-configured' };
   let data;
   try {
@@ -22,7 +22,9 @@ async function checkForUpdate({ url, currentVersion, platform, fetchFn }) {
   if (!data || typeof data.version !== 'string') return { status: 'error', message: 'File versione non valido.' };
   if (compareVersions(data.version, currentVersion) <= 0) return { status: 'up-to-date', current: currentVersion };
 
-  const dl = data.downloads && data.downloads[platform];
+  // cerca prima il file per questa architettura (es. "mac-x64"); "mac" e il file per i Mac Apple, quindi mai per gli Intel
+  const d = data.downloads || {};
+  const dl = d[`${platform}-${arch}`] || (platform === 'mac' && arch === 'x64' ? undefined : d[platform]);
   const safe = typeof dl === 'string' && /^https:\/\//i.test(dl) ? dl : null;   // solo https
   const mandatory = !!data.mandatory || (data.minVersion ? compareVersions(currentVersion, data.minVersion) < 0 : false);
   return { status: 'available', current: currentVersion, version: data.version, notes: String(data.notes || ''), mandatory, url: safe, date: data.releaseDate || '' };

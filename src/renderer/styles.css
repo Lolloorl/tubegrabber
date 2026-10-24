@@ -257,3 +257,15 @@ details>*:not(summary){margin-top:12px}
 .optpanel h3{margin:0 0 10px;font-size:14px;font-weight:600}
 .subs-row{margin:6px 0 0}
 .subs-row .btn.small{margin-bottom:1px}
+
+/* ---------- accorciatore e densita del QR ---------- */
+.shortline{margin-top:10px;padding-bottom:0}
+.short-status{min-height:16px;margin:4px 0 6px;word-break:break-all}
+.short-status.ok{color:var(--ok)} .short-status.err{color:var(--warn)}
+.qr-density{font-size:12px;color:var(--muted);text-align:center;min-height:16px}
+.qr-density.dense{color:var(--warn)}
+
+.aliasbox{margin-top:8px}
+.aliasrow{display:flex}
+.aliasprefix{display:flex;align-items:center;padding:0 10px;background:#20242b;border:1px solid var(--line);border-right:0;border-radius:8px 0 0 8px;color:var(--muted)}
+.aliasrow .field{border-radius:0 8px 8px 0}

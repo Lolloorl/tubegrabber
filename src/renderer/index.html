@@ -128,7 +128,17 @@
       <h1>QR Studio</h1>
       <div class="ctl full">Cosa vuoi inserire nel QR?
         <div class="seg flex" data-el="qrtype"><button data-v="text">Link / testo</button><button data-v="wifi">Wi-Fi</button><button data-v="whatsapp">WhatsApp</button><button data-v="email">E-mail</button><button data-v="vcard">Biglietto da visita</button></div></div>
-      <div data-type="text"><label class="ctl full">Testo o link<input class="field" data-k="text" value="https://www.youtube.com" spellcheck="false"></label></div>
+      <div data-type="text">
+        <label class="ctl full">Testo o link<input class="field" data-k="text" value="https://www.youtube.com" spellcheck="false"></label>
+        <label class="check shortline"><input type="checkbox" data-el="shorten"> Accorcia il link (il QR diventa più semplice)</label>
+        <div class="aliasbox" data-el="aliasbox" hidden>
+          <label class="ctl full">Nome personalizzato <small>(facoltativo: 1 o 2 parole)</small>
+            <div class="aliasrow"><span class="aliasprefix">is.gd/</span><input class="field" data-el="alias" maxlength="40" placeholder="es. pizzeria roma" spellcheck="false"></div></label>
+          <p class="hint" data-el="aliashint"></p>
+        </div>
+        <p class="hint short-status" data-el="shortstatus"></p>
+        <p class="hint">Il link viene inviato a un servizio esterno (is.gd o TinyURL) per accorciarlo. Se quel servizio chiudesse, il QR smetterebbe di funzionare: per QR stampati e duraturi è meglio non accorciare.</p>
+      </div>
       <div data-type="wifi" class="fields" hidden>
         <label class="ctl">Nome della rete<input class="field" data-f="wifi.ssid" spellcheck="false"></label>
         <label class="ctl">Password<input class="field" data-f="wifi.pass" spellcheck="false"></label>
@@ -214,6 +224,7 @@
     <aside class="qr-preview">
       <div class="stage"><canvas data-el="canvas" width="640" height="640" aria-label="Anteprima QR Code"></canvas></div>
       <div class="qr-warn" data-el="warn"></div>
+      <div class="qr-density" data-el="density"></div>
       <div class="actions">
         <button class="btn solid" data-el="save">Salva PNG</button>
         <button class="btn ghost" data-el="copy">Copia</button>

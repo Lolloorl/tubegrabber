@@ -12,6 +12,7 @@ const { updateFfmpeg } = require('./src/main/ffmpeg-update');
 const { createStore } = require('./src/main/settings');
 const { mailUrls } = require('./src/main/support');
 const { loadAll } = require('./src/main/recipes-load');
+const { shortenUrl } = require('./src/main/shortener');
 
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config', 'app-config.json'), 'utf8'));
 const jobs = new Map();
@@ -180,7 +181,7 @@ ipcMain.handle('job:start', (e, { id, tool, payload }) => {
 ipcMain.handle('job:cancel', (_e, id) => { const j = jobs.get(id); if (j) cancelJob(j); return !!j; });
 
 ipcMain.handle('update:check', () => checkForUpdate({
-  url: config.updateUrl, currentVersion: app.getVersion(), platform: binaries.plat,
+  url: config.updateUrl, currentVersion: app.getVersion(), platform: binaries.plat, arch: process.arch,
   fetchFn: (u) => net.fetch(u, { cache: 'no-store' })
 }));
 
@@ -199,6 +200,7 @@ ipcMain.handle('support:send', (_e, { kind, subject, text }) => {
   return { ok: true, to };
 });
 
+ipcMain.handle('qr:shorten', (_e, { url, alias }) => shortenUrl({ url, alias, fetchFn: (u, o) => net.fetch(u, o) }));
 ipcMain.handle('shell:openExternal', (_e, url) => { if (/^https:\/\//i.test(url)) { shell.openExternal(url); return true; } return false; });
 ipcMain.handle('shell:openFolder', (_e, dir) => (dir ? shell.openPath(dir) : false));
 

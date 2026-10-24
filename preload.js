@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('api', {
   supportBase: () => ipcRenderer.invoke('support:base'),
   sendReport: (kind, subject, text) => ipcRenderer.invoke('support:send', { kind, subject, text }),
   copyText: (t) => ipcRenderer.invoke('support:copy', t),
+  shortenUrl: (url, alias) => ipcRenderer.invoke('qr:shorten', { url, alias }),
   checkUpdate: () => ipcRenderer.invoke('update:check'),
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
   openFolder: (dir) => ipcRenderer.invoke('shell:openFolder', dir),

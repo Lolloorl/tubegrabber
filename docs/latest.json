@@ -1,9 +1,11 @@
 {
-  "version": "2.1.1",
+  "version": "2.3.1",
   "mandatory": false,
-  "releaseDate": "2026-10-19",
-  "notes": "Sottotitoli, ruota i video e riduci peso e dimensioni delle foto, nuova versione anche per mac",
+  "releaseDate": "2026-10-21",
+  "notes": "Link breve con nome personalizzato nei QR, versione per Mac Intel, sottotitoli, ruota video e foto nel convertitore.",
   "downloads": {
-    "win": "https://github.com/Lolloorl/tubegrabber/releases/tag/v2.2.1"
+    "win": "https://github.com/Lolloorl/tubegrabber/releases/download/v2.3.1/TubeGrabber-2.3.1-win-x64.exe",
+    "mac": "https://github.com/Lolloorl/tubegrabber/releases/download/v2.3.1/TubeGrabber-2.3.1-mac-arm64.dmg",
+    "mac-x64": "https://github.com/Lolloorl/tubegrabber/releases/download/v2.3.1/TubeGrabber-2.3.1-mac-x64.dmg"
   }
 }
